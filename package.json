@@ -1,0 +1,9 @@
+{
+  "name": "ai-landscape-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI Foundation Model Landscape Tracker with auto-updating news",
+  "scripts": {
+    "update": "node scripts/update-news.js"
+  }
+}
