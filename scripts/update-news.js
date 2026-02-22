@@ -88,8 +88,8 @@ function extractCompanies(source) {
       slug: slugs[i] || names[i].toLowerCase().replace(/\s+/g, "-"),
       models: models[i] || [],
       searchTerms: [
-        names[i].toLowerCase(),
-        ...(models[i] || []).map(m => m.toLowerCase().split(" ")[0])
+        names[i],
+        ...(models[i] || [])
       ].filter(t => t.length > 2)
     });
   }
@@ -129,8 +129,13 @@ function matchArticlesToCompanies(companies, articles) {
 
   for (const company of companies) {
     const matched = articles.filter(article => {
-      const text = (article.title + " " + article.description).toLowerCase();
-      return company.searchTerms.some(term => text.includes(term));
+      const text = article.title + " " + article.description;
+      return company.searchTerms.some(term => {
+        if (term.length < 3) return false;
+        const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp("\\b" + escaped + "\\b", "i");
+        return regex.test(text);
+      });
     });
 
     if (matched.length > 0) {

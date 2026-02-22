@@ -252,10 +252,16 @@ function populateCardNews(card) {
   const company = COMPANIES.find(c => c.slug === slug);
   const newsContainer = card.querySelector(".card-news-items");
 
-  const companyTerms = [company.name.toLowerCase(), ...company.models.map(m => m.toLowerCase()), company.leader.toLowerCase()];
+  // Use full names with word boundary matching for precise results
+  const companyTerms = [company.name, ...company.models, company.leader].filter(Boolean);
   const relevant = allNewsItems.filter(item => {
-    const text = (item.title + " " + (item.description || "")).toLowerCase();
-    return companyTerms.some(term => text.includes(term.split(" ")[0]));
+    const text = item.title + " " + (item.description || "");
+    return companyTerms.some(term => {
+      if (term.length < 3) return false;
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp("\\b" + escaped + "\\b", "i");
+      return regex.test(text);
+    });
   }).slice(0, 5);
 
   if (relevant.length === 0) {
@@ -585,8 +591,17 @@ function classifySignal(text) {
 function matchCompanies(text) {
   const lower = text.toLowerCase();
   return COMPANIES.filter(c => {
-    const terms = [c.name.toLowerCase(), ...c.models.map(m => m.toLowerCase().split(" ")[0])];
-    return terms.some(t => t.length > 2 && lower.includes(t));
+    // Use full company name and full model names for precise matching
+    const exactTerms = [c.name.toLowerCase(), ...c.models.map(m => m.toLowerCase())];
+    // Also match leader names (full name only)
+    if (c.leader) exactTerms.push(c.leader.toLowerCase());
+    return exactTerms.some(term => {
+      if (term.length < 3) return false;
+      // Word boundary match to avoid partial matches (e.g. "meta" in "metadata")
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp("\\b" + escaped + "\\b", "i");
+      return regex.test(text);
+    });
   });
 }
 
