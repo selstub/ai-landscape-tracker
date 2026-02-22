@@ -25,6 +25,9 @@ document.addEventListener("DOMContentLoaded", () => {
   setInterval(fetchAllNews, 5 * 60 * 1000); // refresh news every 5 min
   document.getElementById("last-scan").textContent = new Date().toLocaleString();
 
+  // Bind modal close button
+  document.getElementById("modal-close-btn")?.addEventListener("click", closeModal);
+
   // Show last auto-update timestamp if available
   if (typeof LAST_AUTO_UPDATED !== "undefined" && LAST_AUTO_UPDATED) {
     const el = document.getElementById("last-auto-update");
@@ -144,6 +147,12 @@ function renderCompanyCards() {
     const card = createCompanyCard(company, idx);
     grid.appendChild(card);
   });
+
+  // Event delegation for card expand/collapse
+  grid.addEventListener("click", (e) => {
+    const header = e.target.closest(".card-header");
+    if (header) toggleCardExpand(header);
+  });
 }
 
 function createCompanyCard(company, idx) {
@@ -157,28 +166,37 @@ function createCompanyCard(company, idx) {
   const mainLogo = logoSrc(company, 64);
   const inlineLogo = logoSrc(company, 32);
 
+  const safeName = escapeHtml(company.name);
+  const safeLocation = escapeHtml(company.location);
+  const safeSummary = escapeHtml(company.summary);
+  const safeLeader = escapeHtml(company.leader);
+  const safePartnerships = escapeHtml(company.partnerships);
+  const safeValuation = escapeHtml(company.valuation);
+  const safeStrategy = escapeHtml(company.strategy);
+  const safeModels = company.models.map(m => escapeHtml(m)).join(", ");
+
   card.innerHTML = `
-    <div class="card-header" onclick="toggleCardExpand(this)">
+    <div class="card-header">
       <div class="card-logo-wrap">
-        <img class="card-logo" src="${mainLogo}" alt="${company.name}"
+        <img class="card-logo" src="${mainLogo}" alt="${safeName}"
              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
         <div class="card-logo-fallback" style="display:none; background:${company.color}20; color:${company.color}">
           ${company.emoji}
         </div>
       </div>
       <div class="card-title-block">
-        <h3><img class="card-inline-logo" src="${inlineLogo}" alt="" onerror="this.style.display='none'"> ${company.name}</h3>
-        <span class="card-location">${regionFlag} ${company.location}</span>
+        <h3><img class="card-inline-logo" src="${inlineLogo}" alt="" onerror="this.style.display='none'"> ${safeName}</h3>
+        <span class="card-location">${regionFlag} ${safeLocation}</span>
       </div>
       <div class="card-rank">#${company.rank}</div>
       <div class="card-expand-icon">▼</div>
     </div>
-    <div class="card-summary">${company.summary}</div>
+    <div class="card-summary">${safeSummary}</div>
     ${company.latestNews ? `
     <div class="card-latest-news">
-      <a href="${company.latestNews.url}" target="_blank">
-        <span class="latest-signal ${company.latestNews.signal}">${getSignalEmoji(company.latestNews.signal)} ${company.latestNews.signal}</span>
-        <span class="latest-headline">${company.latestNews.headline}</span>
+      <a href="${sanitizeUrl(company.latestNews.url)}" target="_blank" rel="noopener noreferrer">
+        <span class="latest-signal ${escapeHtml(company.latestNews.signal)}">${getSignalEmoji(company.latestNews.signal)} ${escapeHtml(company.latestNews.signal)}</span>
+        <span class="latest-headline">${escapeHtml(company.latestNews.headline)}</span>
         <span class="latest-date">${formatDate(new Date(company.latestNews.date))}</span>
       </a>
     </div>
@@ -191,35 +209,35 @@ function createCompanyCard(company, idx) {
       <div class="detail-section">
         <div class="detail-row">
           <span class="detail-label">🤖 Models</span>
-          <span class="detail-value">${company.models.join(", ")}</span>
+          <span class="detail-value">${safeModels}</span>
         </div>
         <div class="detail-row">
           <span class="detail-label">💰 Valuation/Rev</span>
-          <span class="detail-value">${company.valuation}</span>
+          <span class="detail-value">${safeValuation}</span>
         </div>
         <div class="detail-row">
           <span class="detail-label">👤 Leader</span>
           <span class="detail-value">
-            ${company.leader}
-            ${company.leaderX ? `<a href="${company.leaderX}" target="_blank" class="x-link">𝕏</a>` : ""}
+            ${safeLeader}
+            ${company.leaderX ? `<a href="${sanitizeUrl(company.leaderX)}" target="_blank" rel="noopener noreferrer" class="x-link">𝕏</a>` : ""}
           </span>
         </div>
         <div class="detail-row">
           <span class="detail-label">🤝 Partners</span>
-          <span class="detail-value">${company.partnerships}</span>
+          <span class="detail-value">${safePartnerships}</span>
         </div>
         <div class="detail-row">
           <span class="detail-label">📋 Strategy</span>
-          <span class="detail-value">${company.strategy}</span>
+          <span class="detail-value">${safeStrategy}</span>
         </div>
         <div class="detail-row detail-links">
-          ${company.companyX ? `<a href="${company.companyX}" target="_blank" class="detail-btn">𝕏 Page</a>` : ""}
-          <a href="https://${company.domain}" target="_blank" class="detail-btn">🌐 Website</a>
+          ${company.companyX ? `<a href="${sanitizeUrl(company.companyX)}" target="_blank" rel="noopener noreferrer" class="detail-btn">𝕏 Page</a>` : ""}
+          <a href="https://${escapeHtml(company.domain)}" target="_blank" rel="noopener noreferrer" class="detail-btn">🌐 Website</a>
         </div>
       </div>
       <div class="card-news-section">
-        <h4>📡 Latest Signals for ${company.name}</h4>
-        <div class="card-news-items" id="news-${company.slug}">
+        <h4>📡 Latest Signals for ${safeName}</h4>
+        <div class="card-news-items" id="news-${escapeHtml(company.slug)}">
           <div class="mini-loading">scanning...</div>
         </div>
       </div>
@@ -270,10 +288,10 @@ function populateCardNews(card) {
   }
 
   newsContainer.innerHTML = relevant.map(item => `
-    <a href="${item.link}" target="_blank" class="card-news-item">
+    <a href="${sanitizeUrl(item.link)}" target="_blank" rel="noopener noreferrer" class="card-news-item">
       <span class="card-news-signal">${getSignalEmoji(item.signal)}</span>
-      <span class="card-news-title">${item.title}</span>
-      <span class="card-news-date">${item.dateFormatted}</span>
+      <span class="card-news-title">${escapeHtml(item.title)}</span>
+      <span class="card-news-date">${escapeHtml(item.dateFormatted)}</span>
     </a>
   `).join("");
 }
@@ -425,15 +443,15 @@ function renderNewsFeed() {
   }
 
   container.innerHTML = items.slice(0, 50).map((item, idx) => `
-    <a href="${item.link}" target="_blank" class="news-item" style="animation-delay: ${idx * 0.03}s">
+    <a href="${sanitizeUrl(item.link)}" target="_blank" rel="noopener noreferrer" class="news-item" style="animation-delay: ${idx * 0.03}s">
       <div class="news-item-header">
-        <span class="news-signal-badge ${item.signal}">${getSignalEmoji(item.signal)} ${item.signal}</span>
-        <span class="news-date">${item.dateFormatted}</span>
+        <span class="news-signal-badge ${escapeHtml(item.signal)}">${getSignalEmoji(item.signal)} ${escapeHtml(item.signal)}</span>
+        <span class="news-date">${escapeHtml(item.dateFormatted)}</span>
       </div>
-      <div class="news-title">${item.title}</div>
+      <div class="news-title">${escapeHtml(item.title)}</div>
       <div class="news-meta">
-        <span class="news-source">${item.sourceIcon} ${item.source}</span>
-        ${item.companies.length > 0 ? `<span class="news-companies">${item.companies.map(c => `<span class="news-company-tag" style="border-color:${c.color}"><img class="news-company-logo" src="${logoSrc(c, 16)}" alt="" onerror="this.style.display='none'"> ${c.name}</span>`).join("")}</span>` : ""}
+        <span class="news-source">${item.sourceIcon} ${escapeHtml(item.source)}</span>
+        ${item.companies.length > 0 ? `<span class="news-companies">${item.companies.map(c => `<span class="news-company-tag" style="border-color:${c.color}"><img class="news-company-logo" src="${logoSrc(c, 16)}" alt="" onerror="this.style.display='none'"> ${escapeHtml(c.name)}</span>`).join("")}</span>` : ""}
       </div>
     </a>
   `).join("");
@@ -561,11 +579,24 @@ function downloadHTMLTable() {
   URL.revokeObjectURL(url);
 }
 
+// ---- Security Helpers ----
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.appendChild(document.createTextNode(str));
+  return div.innerHTML;
+}
+
+function sanitizeUrl(url) {
+  try {
+    const parsed = new URL(url);
+    if (!["http:", "https:"].includes(parsed.protocol)) return "#";
+    return escapeHtml(parsed.href);
+  } catch { return "#"; }
+}
+
 // ---- Helpers ----
 function stripHtml(html) {
-  const tmp = document.createElement("div");
-  tmp.innerHTML = html;
-  return tmp.textContent || tmp.innerText || "";
+  return html.replace(/<[^>]*>/g, "").replace(/&[^;]+;/g, " ").trim();
 }
 
 function formatDate(date) {

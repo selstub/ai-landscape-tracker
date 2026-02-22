@@ -169,7 +169,7 @@ async function callGemini(companyArticles) {
 
     if (!res.ok) {
       const errText = await res.text();
-      console.error(`Gemini API error ${res.status}: ${errText}`);
+      console.error(`Gemini API error ${res.status}: ${errText.slice(0, 500)}`);
       return {};
     }
 
@@ -177,7 +177,8 @@ async function callGemini(companyArticles) {
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     try {
-      return JSON.parse(text);
+      const parsed = JSON.parse(text);
+      return validateGeminiResponse(parsed);
     } catch {
       console.error("Failed to parse Gemini response as JSON:", text.slice(0, 500));
       return {};
@@ -247,6 +248,28 @@ function applyUpdates(source, newsUpdates) {
   }
 
   return source;
+}
+
+const VALID_SIGNALS = ["launch", "funding", "regulation", "partnership", "infra"];
+
+function validateGeminiResponse(parsed) {
+  if (typeof parsed !== "object" || parsed === null) return {};
+  const validated = {};
+  for (const [slug, entry] of Object.entries(parsed)) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const { headline, summary, signal, date, url } = entry;
+    if (typeof headline !== "string" || headline.length > 200) continue;
+    if (typeof summary !== "string" || summary.length > 500) continue;
+    if (!VALID_SIGNALS.includes(signal)) continue;
+    if (typeof date !== "string" || isNaN(Date.parse(date))) continue;
+    if (typeof url !== "string") continue;
+    try {
+      const parsed = new URL(url);
+      if (!["http:", "https:"].includes(parsed.protocol)) continue;
+    } catch { continue; }
+    validated[slug] = { headline, summary, signal, date, url };
+  }
+  return validated;
 }
 
 function escapeRegex(str) {
