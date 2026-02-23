@@ -6,9 +6,9 @@
 // Last auto-updated by GitHub Actions (ISO timestamp, null = never)
 const LAST_AUTO_UPDATED = "2026-02-23T08:06:09.206Z";
 
-// Helper: Google favicon service as reliable logo source
-function getLogoUrl(domain, size) {
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=${size || 64}`;
+// Helper: local logo path from slug
+function getLogoUrl(slug) {
+  return `logos/${slug}.png`;
 }
 
 const COMPANIES = [
@@ -20,7 +20,7 @@ const COMPANIES = [
     location: "London, UK",
     region: "eu",
     category: ["frontier", "bigtech"],
-    models: ["Gemini Ultra", "Gemini Pro", "Gemini Nano", "Imagen", "Veo"],
+    models: ["Gemini Ultra", "Gemini Pro", "Gemini Nano", "Imagen", "Veo", "Nano Banana", "Lyria 3"],
     strategy: "Closed + selective open",
     valuation: "$300B+ (Alphabet revenue)",
     valuationNum: 300,

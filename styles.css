@@ -1056,3 +1056,266 @@ footer p {
   .tagline { font-size: 11px; }
   .company-card { border-radius: 8px; }
 }
+
+/* ---- Geek/Business Mode Toggle ---- */
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.mode-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--border);
+  border-radius: 24px;
+  transition: all 0.3s;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: var(--accent);
+  border-radius: 50%;
+  transition: all 0.3s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: #6366f1;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+  background: #ffffff;
+}
+
+/* ---- Business Mode Overrides ---- */
+body.business-mode {
+  --bg-dark: #ffffff;
+  --bg-card: #f9fafb;
+  --bg-card-hover: #eef2ff;
+  --border: #e5e7eb;
+  --border-glow: rgba(99, 102, 241, 0.2);
+  --text: #1a1a2e;
+  --text-dim: #666666;
+  --text-bright: #000000;
+  --accent: #6366f1;
+  --accent2: #7c3aed;
+  --accent3: #ec4899;
+  --accent4: #3b82f6;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+}
+
+body.business-mode #matrix-bg,
+body.business-mode #particles {
+  display: none;
+}
+
+body.business-mode .glitch::before,
+body.business-mode .glitch::after {
+  display: none;
+}
+
+body.business-mode h1,
+body.business-mode .section-header h2 {
+  font-family: var(--font-body);
+}
+
+body.business-mode header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+}
+
+body.business-mode nav.filter-bar {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+}
+
+body.business-mode .company-card {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+body.business-mode .company-card:hover {
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
+body.business-mode .company-card::before {
+  opacity: 0.8;
+}
+
+body.business-mode .card-details {
+  background: rgba(249, 250, 251, 0.8);
+}
+
+body.business-mode .news-item {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+body.business-mode .news-item:hover {
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+}
+
+body.business-mode .tag-frontier { background: rgba(124, 58, 237, 0.08); color: #7c3aed; border-color: rgba(124, 58, 237, 0.2); }
+body.business-mode .tag-bigtech { background: rgba(59, 130, 246, 0.08); color: #3b82f6; border-color: rgba(59, 130, 246, 0.2); }
+body.business-mode .tag-opensource { background: rgba(16, 185, 129, 0.08); color: #059669; border-color: rgba(16, 185, 129, 0.2); }
+body.business-mode .tag-infra { background: rgba(236, 72, 153, 0.08); color: #db2777; border-color: rgba(236, 72, 153, 0.2); }
+
+body.business-mode .stat-pill {
+  background: #ffffff;
+  border-color: #e5e7eb;
+}
+
+body.business-mode .stat-pill:hover {
+  border-color: #6366f1;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.1);
+}
+
+body.business-mode .filter-btn {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: #666666;
+}
+
+body.business-mode .filter-btn:hover {
+  border-color: #6366f1;
+  color: #1a1a2e;
+}
+
+body.business-mode .filter-btn.active {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: #6366f1;
+  color: #6366f1;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.1);
+}
+
+body.business-mode .search-box {
+  background: #ffffff;
+  border-color: #e5e7eb;
+}
+
+body.business-mode .search-box:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.1);
+}
+
+body.business-mode .search-box input {
+  color: #1a1a2e;
+  font-family: var(--font-body);
+}
+
+body.business-mode .feed-btn {
+  background: #ffffff;
+  border-color: #e5e7eb;
+}
+
+body.business-mode .feed-btn.active {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+body.business-mode .badge.pulse {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  border-color: #6366f1;
+  animation: none;
+  box-shadow: none;
+}
+
+body.business-mode .download-btn {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+body.business-mode #sort-select {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: #1a1a2e;
+}
+
+body.business-mode .detail-btn {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: #1a1a2e;
+}
+
+body.business-mode .detail-btn:hover {
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+body.business-mode footer {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+body.business-mode .card-latest-news a {
+  background: rgba(99, 102, 241, 0.04);
+  border-color: rgba(99, 102, 241, 0.1);
+}
+
+body.business-mode .card-latest-news a:hover {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+body.business-mode .card-news-item:hover {
+  background: rgba(99, 102, 241, 0.04);
+}
+
+body.business-mode .cursor-blink {
+  color: #6366f1;
+}
+
+body.business-mode .card-logo {
+  background: #f3f4f6;
+}
+
+body.business-mode .modal-content {
+  background: #ffffff;
+  border-color: #e5e7eb;
+}
+
+body.business-mode .news-feed::-webkit-scrollbar-track { background: #f3f4f6; }
+body.business-mode .news-feed::-webkit-scrollbar-thumb { background: #d1d5db; }
+body.business-mode .news-feed::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+
+@media (max-width: 768px) {
+  .mode-toggle { order: -1; }
+}

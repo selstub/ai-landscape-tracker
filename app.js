@@ -13,6 +13,7 @@ let allNewsItems = [];
 
 // ---- Init ----
 document.addEventListener("DOMContentLoaded", () => {
+  initModeToggle();
   initMatrixRain();
   initParticles();
   updateStats();
@@ -36,8 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ---- Logo Helper ----
-function logoSrc(company, size) {
-  return getLogoUrl(company.logoDomain || company.domain, size || 64);
+function logoSrc(company) {
+  return getLogoUrl(company.slug);
 }
 
 // ---- Matrix Rain Background ----
@@ -163,8 +164,8 @@ function createCompanyCard(company, idx) {
 
   const regionFlag = getRegionFlag(company.region);
   const strategyBadge = getStrategyBadge(company.strategy);
-  const mainLogo = logoSrc(company, 64);
-  const inlineLogo = logoSrc(company, 32);
+  const mainLogo = logoSrc(company);
+  const inlineLogo = logoSrc(company);
 
   const safeName = escapeHtml(company.name);
   const safeLocation = escapeHtml(company.location);
@@ -272,7 +273,7 @@ function populateCardNews(card) {
 
   // Use full names with word boundary matching for precise results
   const companyTerms = [company.name, ...company.models, company.leader].filter(Boolean);
-  const relevant = allNewsItems.filter(item => {
+  let relevant = allNewsItems.filter(item => {
     const text = item.title + " " + (item.description || "");
     return companyTerms.some(term => {
       if (term.length < 3) return false;
@@ -280,7 +281,18 @@ function populateCardNews(card) {
       const regex = new RegExp("\\b" + escaped + "\\b", "i");
       return regex.test(text);
     });
-  }).slice(0, 5);
+  });
+
+  // Fallback: if word-boundary match returns nothing, try case-insensitive includes on company name only
+  if (relevant.length === 0 && company.name.length >= 3) {
+    const nameLower = company.name.toLowerCase();
+    relevant = allNewsItems.filter(item => {
+      const text = (item.title + " " + (item.description || "")).toLowerCase();
+      return text.includes(nameLower);
+    });
+  }
+
+  relevant = relevant.slice(0, 5);
 
   if (relevant.length === 0) {
     newsContainer.innerHTML = `<div class="mini-loading">No recent signals detected for ${company.name}</div>`;
@@ -451,7 +463,7 @@ function renderNewsFeed() {
       <div class="news-title">${escapeHtml(item.title)}</div>
       <div class="news-meta">
         <span class="news-source">${item.sourceIcon} ${escapeHtml(item.source)}</span>
-        ${item.companies.length > 0 ? `<span class="news-companies">${item.companies.map(c => `<span class="news-company-tag" style="border-color:${c.color}"><img class="news-company-logo" src="${logoSrc(c, 16)}" alt="" onerror="this.style.display='none'"> ${escapeHtml(c.name)}</span>`).join("")}</span>` : ""}
+        ${item.companies.length > 0 ? `<span class="news-companies">${item.companies.map(c => `<span class="news-company-tag" style="border-color:${c.color}"><img class="news-company-logo" src="${logoSrc(c)}" alt="" onerror="this.style.display='none'"> ${escapeHtml(c.name)}</span>`).join("")}</span>` : ""}
       </div>
     </a>
   `).join("");
@@ -555,7 +567,7 @@ function downloadHTMLTable() {
         if (c.strategy.toLowerCase().includes("hybrid") || c.strategy.toLowerCase().includes("+")) stratClass = "strat-hybrid";
         return `<tr>
           <td>${c.rank}</td>
-          <td><div class="company-name"><img src="${logoSrc(c, 32)}" alt="" onerror="this.style.display='none'">${c.name}</div><div style="font-size:11px;color:#666;margin-top:2px">${c.summary}</div></td>
+          <td><div class="company-name"><img src="${logoSrc(c)}" alt="" onerror="this.style.display='none'">${c.name}</div><div style="font-size:11px;color:#666;margin-top:2px">${c.summary}</div></td>
           <td>${c.location}</td>
           <td class="models">${c.models.join(", ")}</td>
           <td><span class="strategy-badge ${stratClass}">${c.strategy}</span></td>
@@ -620,8 +632,7 @@ function classifySignal(text) {
 }
 
 function matchCompanies(text) {
-  const lower = text.toLowerCase();
-  return COMPANIES.filter(c => {
+  const matched = COMPANIES.filter(c => {
     // Use full company name and full model names for precise matching
     const exactTerms = [c.name.toLowerCase(), ...c.models.map(m => m.toLowerCase())];
     // Also match leader names (full name only)
@@ -634,6 +645,17 @@ function matchCompanies(text) {
       return regex.test(text);
     });
   });
+
+  // Fallback: if no word-boundary matches, try case-insensitive includes on company name only
+  if (matched.length === 0) {
+    const lower = text.toLowerCase();
+    return COMPANIES.filter(c => {
+      if (c.name.length < 3) return false;
+      return lower.includes(c.name.toLowerCase());
+    });
+  }
+
+  return matched;
 }
 
 function getSignalEmoji(signal) {
@@ -660,4 +682,25 @@ function getStrategyBadge(strategy) {
 
 function closeModal() {
   document.getElementById("company-modal").style.display = "none";
+}
+
+// ---- Geek / Business Mode Toggle ----
+function initModeToggle() {
+  const toggle = document.getElementById("mode-toggle-input");
+  const saved = localStorage.getItem("viewMode");
+  if (saved === "business") {
+    document.body.classList.add("business-mode");
+    if (toggle) toggle.checked = true;
+  }
+  if (toggle) {
+    toggle.addEventListener("change", () => {
+      if (toggle.checked) {
+        document.body.classList.add("business-mode");
+        localStorage.setItem("viewMode", "business");
+      } else {
+        document.body.classList.remove("business-mode");
+        localStorage.setItem("viewMode", "geek");
+      }
+    });
+  }
 }

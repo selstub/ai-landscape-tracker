@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://logo.clearbit.com https://img.logo.dev data:; connect-src https://api.rss2json.com; font-src 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://api.rss2json.com; font-src 'self';">
     <title>AI Foundation Model Landscape Tracker</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
@@ -26,6 +26,14 @@
                         <span class="badge pulse">LIVE</span>
                     </p>
                 </div>
+            </div>
+            <div class="mode-toggle">
+                <span class="mode-label">Geek</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="mode-toggle-input">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="mode-label">Business</span>
             </div>
             <div class="header-stats">
                 <div class="stat-pill">
