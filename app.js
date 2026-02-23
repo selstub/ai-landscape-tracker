@@ -23,6 +23,12 @@ document.addEventListener("DOMContentLoaded", () => {
   initSearch();
   initBrainBounce();
   initDownloadBtn();
+
+  // Event delegation for card expand/collapse — bound once
+  document.getElementById("company-grid").addEventListener("click", (e) => {
+    const header = e.target.closest(".card-header");
+    if (header) toggleCardExpand(header);
+  });
   setInterval(fetchAllNews, 5 * 60 * 1000); // refresh news every 5 min
   document.getElementById("last-scan").textContent = new Date().toLocaleString();
 
@@ -148,12 +154,6 @@ function renderCompanyCards() {
     const card = createCompanyCard(company, idx);
     grid.appendChild(card);
   });
-
-  // Event delegation for card expand/collapse
-  grid.addEventListener("click", (e) => {
-    const header = e.target.closest(".card-header");
-    if (header) toggleCardExpand(header);
-  });
 }
 
 function createCompanyCard(company, idx) {
@@ -189,7 +189,6 @@ function createCompanyCard(company, idx) {
         <h3><img class="card-inline-logo" src="${inlineLogo}" alt="" onerror="this.style.display='none'"> ${safeName}</h3>
         <span class="card-location">${regionFlag} ${safeLocation}</span>
       </div>
-      <div class="card-rank">#${company.rank}</div>
       <div class="card-expand-icon">▼</div>
     </div>
     <div class="card-summary">${safeSummary}</div>
@@ -266,40 +265,72 @@ function toggleCardExpand(headerEl) {
   }
 }
 
-function populateCardNews(card) {
+// Cache for company-specific news fetches
+const companyNewsCache = {};
+
+async function populateCardNews(card) {
   const slug = card.querySelector(".card-news-items").id.replace("news-", "");
   const company = COMPANIES.find(c => c.slug === slug);
   const newsContainer = card.querySelector(".card-news-items");
 
-  // Use full names with word boundary matching for precise results
-  const companyTerms = [company.name, ...company.models, company.leader].filter(Boolean);
-  let relevant = allNewsItems.filter(item => {
-    const text = item.title + " " + (item.description || "");
-    return companyTerms.some(term => {
-      if (term.length < 3) return false;
-      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const regex = new RegExp("\\b" + escaped + "\\b", "i");
-      return regex.test(text);
-    });
-  });
-
-  // Fallback: if word-boundary match returns nothing, try case-insensitive includes on company name only
-  if (relevant.length === 0 && company.name.length >= 3) {
-    const nameLower = company.name.toLowerCase();
-    relevant = allNewsItems.filter(item => {
-      const text = (item.title + " " + (item.description || "")).toLowerCase();
-      return text.includes(nameLower);
-    });
-  }
-
-  relevant = relevant.slice(0, 5);
-
-  if (relevant.length === 0) {
-    newsContainer.innerHTML = `<div class="mini-loading">No recent signals detected for ${company.name}</div>`;
+  // If already cached, render immediately
+  if (companyNewsCache[slug]) {
+    renderCardNewsItems(newsContainer, companyNewsCache[slug], company);
     return;
   }
 
-  newsContainer.innerHTML = relevant.map(item => `
+  newsContainer.innerHTML = `<div class="mini-loading">fetching news for ${escapeHtml(company.name)}...</div>`;
+
+  // Build Google News RSS search URL for this company
+  const searchQuery = company.newsSearch || company.name;
+  const googleNewsUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(searchQuery + " AI")}&hl=en&gl=US&ceid=US:en`;
+  const proxyBase = "https://api.rss2json.com/v1/api.json?rss_url=";
+
+  try {
+    const res = await fetch(proxyBase + encodeURIComponent(googleNewsUrl));
+    const data = await res.json();
+    let items = [];
+    if (data.status === "ok" && data.items) {
+      items = data.items.slice(0, 5).map(item => ({
+        title: stripHtml(item.title),
+        link: item.link,
+        date: new Date(item.pubDate),
+        dateFormatted: formatDate(new Date(item.pubDate)),
+        signal: classifySignal(item.title + " " + (item.description || ""))
+      }));
+    }
+    companyNewsCache[slug] = items;
+    renderCardNewsItems(newsContainer, items, company);
+  } catch {
+    // Fallback to general news matching
+    const companyTerms = [company.name, ...company.models, company.leader].filter(Boolean);
+    let relevant = allNewsItems.filter(item => {
+      const text = item.title + " " + (item.description || "");
+      return companyTerms.some(term => {
+        if (term.length < 3) return false;
+        const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp("\\b" + escaped + "\\b", "i");
+        return regex.test(text);
+      });
+    });
+    if (relevant.length === 0 && company.name.length >= 3) {
+      const nameLower = company.name.toLowerCase();
+      relevant = allNewsItems.filter(item => {
+        const text = (item.title + " " + (item.description || "")).toLowerCase();
+        return text.includes(nameLower);
+      });
+    }
+    companyNewsCache[slug] = relevant.slice(0, 5);
+    renderCardNewsItems(newsContainer, companyNewsCache[slug], company);
+  }
+}
+
+function renderCardNewsItems(container, items, company) {
+  if (items.length === 0) {
+    container.innerHTML = `<div class="mini-loading">No recent signals detected for ${escapeHtml(company.name)}</div>`;
+    return;
+  }
+  container.innerHTML = items.map(item => `
     <a href="${sanitizeUrl(item.link)}" target="_blank" rel="noopener noreferrer" class="card-news-item">
       <span class="card-news-signal">${getSignalEmoji(item.signal)}</span>
       <span class="card-news-title">${escapeHtml(item.title)}</span>
@@ -476,9 +507,8 @@ function initDownloadBtn() {
 }
 
 function downloadCSV() {
-  const headers = ["Rank", "Company", "Summary", "Location", "Region", "Flagship Models", "Strategy", "Valuation/Revenue (USD)", "Key Leader", "Major Partnerships"];
+  const headers = ["Company", "Summary", "Location", "Region", "Flagship Models", "Strategy", "Valuation/Revenue (USD)", "Key Leader", "Major Partnerships"];
   const rows = getFilteredCompanies().map(c => [
-    c.rank,
     c.name,
     `"${c.summary.replace(/"/g, '""')}"`,
     c.location,
@@ -500,9 +530,25 @@ function downloadCSV() {
   URL.revokeObjectURL(url);
 }
 
-function downloadHTMLTable() {
+async function downloadHTMLTable() {
   const companies = getFilteredCompanies();
   const date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+  // Convert logos to base64 data URIs so they work in standalone HTML
+  const logoMap = {};
+  await Promise.all(companies.map(async (c) => {
+    try {
+      const res = await fetch(logoSrc(c));
+      const blob = await res.blob();
+      logoMap[c.slug] = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      logoMap[c.slug] = "";
+    }
+  }));
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -525,7 +571,6 @@ function downloadHTMLTable() {
     tbody tr:nth-child(even) { background: #f9fafb; }
     tbody tr:hover { background: #eef2ff; }
     td { padding: 10px 12px; vertical-align: top; line-height: 1.5; }
-    td:first-child { text-align: center; font-weight: 700; color: #6366f1; }
     .company-name { font-weight: 700; display: flex; align-items: center; gap: 8px; }
     .company-name img { width: 20px; height: 20px; border-radius: 4px; }
     .models { color: #7c3aed; font-size: 12px; }
@@ -545,12 +590,11 @@ function downloadHTMLTable() {
   </style>
 </head>
 <body>
-  <h1>🧠 AI Foundation Model Landscape</h1>
+  <h1>AI Foundation Model Landscape</h1>
   <div class="subtitle">Generated ${date} &mdash; ${companies.length} companies tracked</div>
   <table>
     <thead>
       <tr>
-        <th>#</th>
         <th>Company</th>
         <th>Location</th>
         <th>Flagship Models</th>
@@ -565,9 +609,9 @@ function downloadHTMLTable() {
         let stratClass = "strat-closed";
         if (c.strategy.toLowerCase().includes("open")) stratClass = "strat-open";
         if (c.strategy.toLowerCase().includes("hybrid") || c.strategy.toLowerCase().includes("+")) stratClass = "strat-hybrid";
+        const logoDataUri = logoMap[c.slug] || "";
         return `<tr>
-          <td>${c.rank}</td>
-          <td><div class="company-name"><img src="${logoSrc(c)}" alt="" onerror="this.style.display='none'">${c.name}</div><div style="font-size:11px;color:#666;margin-top:2px">${c.summary}</div></td>
+          <td><div class="company-name">${logoDataUri ? `<img src="${logoDataUri}" alt="">` : ""}${c.name}</div><div style="font-size:11px;color:#666;margin-top:2px">${c.summary}</div></td>
           <td>${c.location}</td>
           <td class="models">${c.models.join(", ")}</td>
           <td><span class="strategy-badge ${stratClass}">${c.strategy}</span></td>

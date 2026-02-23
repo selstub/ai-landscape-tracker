@@ -54,6 +54,7 @@ const COMPANIES = [
     logoDomain: "meta.com",
     color: "#0668E1",
     emoji: "👁️",
+    newsSearch: "Meta AI Llama",
     latestNews: null
   },
   {
@@ -230,6 +231,7 @@ const COMPANIES = [
     logoDomain: "x.com",
     color: "#1DA1F2",
     emoji: "🚀",
+    newsSearch: "xAI Grok",
     latestNews: null
   },
   {
@@ -406,6 +408,7 @@ const COMPANIES = [
     logoDomain: "samsung.com",
     color: "#1428A0",
     emoji: "📱",
+    newsSearch: "Samsung Gauss AI",
     latestNews: null
   },
   {
@@ -428,6 +431,7 @@ const COMPANIES = [
     logoDomain: "nvidia.com",
     color: "#76B900",
     emoji: "🔥",
+    newsSearch: "NVIDIA AI GPU",
     latestNews: null
   },
   {
@@ -450,6 +454,7 @@ const COMPANIES = [
     logoDomain: "amazon.com",
     color: "#FF9900",
     emoji: "☁️",
+    newsSearch: "Amazon AWS Bedrock AI",
     latestNews: null
   },
   {
@@ -472,6 +477,7 @@ const COMPANIES = [
     logoDomain: "microsoft.com",
     color: "#00A4EF",
     emoji: "🪟",
+    newsSearch: "Microsoft Copilot AI",
     latestNews: null
   },
   {
@@ -494,6 +500,7 @@ const COMPANIES = [
     logoDomain: "apple.com",
     color: "#555555",
     emoji: "🍎",
+    newsSearch: "Apple Intelligence AI",
     latestNews: null
   }
 ];
