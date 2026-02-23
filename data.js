@@ -4,7 +4,7 @@
 // ============================================================
 
 // Last auto-updated by GitHub Actions (ISO timestamp, null = never)
-const LAST_AUTO_UPDATED = null;
+const LAST_AUTO_UPDATED = "2026-02-23T08:06:09.206Z";
 
 // Helper: Google favicon service as reliable logo source
 function getLogoUrl(domain, size) {
