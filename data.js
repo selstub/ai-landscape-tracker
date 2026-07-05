@@ -4,7 +4,7 @@
 // ============================================================
 
 // Last auto-updated by GitHub Actions (ISO timestamp, null = never)
-const LAST_AUTO_UPDATED = "2026-07-04T08:28:03.866Z";
+const LAST_AUTO_UPDATED = "2026-07-05T08:44:46.751Z";
 
 // Helper: local logo path from slug
 function getLogoUrl(slug) {
